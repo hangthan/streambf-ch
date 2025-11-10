@@ -1,66 +1,51 @@
+# -*- coding: utf-8 -*-
 """
-Test script for Bloom Filter core module.
-------------------------------------------
-Mục tiêu:
-- Thêm 100 phần tử ngẫu nhiên vào Bloom Filter.
-- Đo tỷ lệ False Positive Rate (FPR).
-- Đảm bảo FPR thực nghiệm < 5%.
-
-Cấu trúc:
-1️⃣ Import BloomFilter class từ src/
-2️⃣ Sinh dữ liệu test ngẫu nhiên
-3️⃣ Đo FPR thực nghiệm & FPR lý thuyết
-4️⃣ In kết quả ra console
+Test script cho Bloom Filter core module.
 """
 
-from src.bloom_filter import BloomFilter
+import sys
+import os
 import random
 import string
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from src.bloom_filter import BloomFilter
 
-def random_str(n=6):
-    """Sinh chuỗi ngẫu nhiên gồm n ký tự thường."""
+
+def random_str(n: int = 6) -> str:
+    """Sinh chuỗi ngẫu nhiên a–z."""
     return ''.join(random.choices(string.ascii_lowercase, k=n))
 
 
 def test_bloom_filter():
-    """Kiểm thử chính cho Bloom Filter."""
+    """Kiểm thử Bloom Filter."""
+    capacity = 100
+    bf = BloomFilter(capacity=capacity, k_hashes=7)
 
-    # Tạo Bloom Filter cho 100 phần tử
-    bf = BloomFilter(capacity=100, k_hashes=7)
-
-    # Sinh dữ liệu thật
-    dataset = [random_str() for _ in range(100)]
+    dataset = [random_str() for _ in range(capacity)]
     for item in dataset:
         bf.add(item)
 
-    # Sinh dữ liệu kiểm thử (các item chưa có trong filter)
-    test_data = [random_str() for _ in range(100)]
-    false_positive = 0
+    test_data = [random_str() for _ in range(capacity)]
+    false_positive = sum(
+        bf.might_contain(item) and item not in dataset for item in test_data
+    )
 
-    for item in test_data:
-        if bf.might_contain(item) and item not in dataset:
-            false_positive += 1
-
-    # Tính FPR thực nghiệm
     empirical_fpr = false_positive / len(test_data)
     theoretical_fpr = bf.estimate_fpr(len(dataset))
 
-    # In kết quả
     print("=" * 60)
     print("🌿 BLOOM FILTER TEST SUMMARY 🌿")
-    print("- Items inserted:", len(dataset))
-    print("- Hash functions (k):", bf.k)
-    print("- Bit array size (m):", bf.size)
-    print(f"- Empirical FPR: {empirical_fpr:.2%}")
-    print(f"- Theoretical FPR: {theoretical_fpr:.2%}")
+    print(f"- Items inserted (n): {len(dataset)}")
+    print(f"- Hash functions (k): {bf.k}")
+    print(f"- Bit array size (m): {bf.size}")
+    print(f"- Empirical FPR    : {empirical_fpr:.2%}")
+    print(f"- Theoretical FPR  : {theoretical_fpr:.2%}")
     print("=" * 60)
 
-    # Kiểm tra điều kiện đạt yêu cầu
     assert empirical_fpr < 0.05, "❌ FPR quá cao (>5%)!"
-    print("✅ Test passed: FPR < 5%")
+    print("✅ Test passed: Empirical FPR < 5%.")
 
 
-# Nếu chạy trực tiếp file này
 if __name__ == "__main__":
     test_bloom_filter()
